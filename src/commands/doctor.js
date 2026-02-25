@@ -49,6 +49,16 @@ export async function doctor() {
       })) && allGood;
 
     allGood =
+      (await asyncCheck("D1 access", async () => {
+        await cfApi(
+          "GET",
+          `/accounts/${config.accountId}/d1/database?per_page=1`,
+          null,
+          config.apiToken
+        );
+      })) && allGood;
+
+    allGood =
       (await asyncCheck("Workers subdomain configured", async () => {
         var sub = await getWorkersSubdomain(config);
         if (!sub) throw new Error("Not configured");

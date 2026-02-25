@@ -10,6 +10,7 @@ var TOKEN_URL =
     JSON.stringify([
       { key: "workers_scripts", type: "edit" },
       { key: "containers", type: "edit" },
+      { key: "d1", type: "edit" },
       { key: "zone", type: "read" },
       { key: "dns", type: "edit" },
     ])

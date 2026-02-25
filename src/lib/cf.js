@@ -193,34 +193,88 @@ export async function getAppConfig(config, name) {
   var bindings = res.result?.bindings || [];
   var binding = bindings.find((b) => b.name === "FLAREPILOT_APP_CONFIG");
   if (!binding) return null;
-  return JSON.parse(binding.text);
+  var appConfig = JSON.parse(binding.text);
+
+  // Migration: old format has env object with values but no envKeys/secretKeys
+  if (appConfig.env && !appConfig.envKeys) {
+    appConfig.envKeys = Object.keys(appConfig.env);
+    appConfig.secretKeys = [];
+    return appConfig;
+  }
+
+  // New format: reconstruct env from native bindings
+  if (!appConfig.env) appConfig.env = {};
+  for (var key of (appConfig.envKeys || [])) {
+    var b = bindings.find((x) => x.name === key && x.type === "plain_text");
+    if (b) appConfig.env[key] = b.text;
+  }
+  for (var key of (appConfig.secretKeys || [])) {
+    appConfig.env[key] = "[hidden]";
+  }
+
+  return appConfig;
 }
 
-export async function pushAppConfig(config, name, appConfig) {
+export async function pushAppConfig(config, name, appConfig, { newSecrets } = {}) {
   var { getWorkerBundle } = await import("./bundle.js");
   var code = getWorkerBundle();
-  var metadata = buildWorkerMetadata(appConfig, { firstDeploy: false });
+  var metadata = buildWorkerMetadata(appConfig, { firstDeploy: false, newSecrets });
   await uploadWorker(config, `flarepilot-${name}`, code, metadata);
 }
 
 // --- Metadata builder (full deploy) ---
 
-export function buildWorkerMetadata(appConfig, { firstDeploy = false } = {}) {
+export function buildWorkerMetadata(appConfig, { firstDeploy = false, newSecrets } = {}) {
+  // Build the JSON blob — store only key lists, not values
+  var envKeys = appConfig.envKeys || [];
+  var secretKeys = appConfig.secretKeys || [];
+  var configJson = Object.assign({}, appConfig);
+
+  // For backward compat with old templates: keep env with plain_text values only
+  var backcompatEnv = {};
+  for (var key of envKeys) {
+    if (appConfig.env && appConfig.env[key] !== undefined) {
+      backcompatEnv[key] = appConfig.env[key];
+    }
+  }
+  configJson.env = backcompatEnv;
+
+  var bindings = [
+    {
+      type: "durable_object_namespace",
+      name: "APP_CONTAINER",
+      class_name: "AppContainer",
+    },
+    {
+      type: "plain_text",
+      name: "FLAREPILOT_APP_CONFIG",
+      text: JSON.stringify(configJson),
+    },
+  ];
+
+  // D1 binding
+  if (appConfig.dbId) {
+    bindings.push({ type: "d1", name: "DB", id: appConfig.dbId });
+  }
+
+  // Emit native plain_text bindings for each envKey
+  for (var key of envKeys) {
+    if (appConfig.env && appConfig.env[key] !== undefined) {
+      bindings.push({ type: "plain_text", name: key, text: appConfig.env[key] });
+    }
+  }
+
+  // Emit native secret_text bindings only for new/updated secrets
+  for (var key of secretKeys) {
+    if (newSecrets && newSecrets[key] !== undefined) {
+      bindings.push({ type: "secret_text", name: key, text: newSecrets[key] });
+    }
+  }
+
   var metadata = {
     main_module: "index.js",
     compatibility_date: "2025-10-08",
-    bindings: [
-      {
-        type: "durable_object_namespace",
-        name: "APP_CONTAINER",
-        class_name: "AppContainer",
-      },
-      {
-        type: "plain_text",
-        name: "FLAREPILOT_APP_CONFIG",
-        text: JSON.stringify(appConfig),
-      },
-    ],
+    bindings,
     observability: {
       enabled: appConfig.observability !== false,
     },
@@ -471,4 +525,68 @@ export async function enableWorkerSubdomain(config, scriptName) {
 export function getAppUrl(subdomain, name) {
   if (!subdomain) return null;
   return `https://flarepilot-${name}.${subdomain}.workers.dev`;
+}
+
+// --- D1 databases ---
+
+export async function createD1Database(config, name, { locationHint, jurisdiction } = {}) {
+  var body = { name };
+  if (jurisdiction) body.jurisdiction = jurisdiction;
+  else if (locationHint) body.primary_location_hint = locationHint;
+  var res = await cfApi(
+    "POST",
+    `/accounts/${config.accountId}/d1/database`,
+    body,
+    config.apiToken
+  );
+  return res.result;
+}
+
+export async function deleteD1Database(config, dbId) {
+  return cfApi(
+    "DELETE",
+    `/accounts/${config.accountId}/d1/database/${dbId}`,
+    null,
+    config.apiToken
+  );
+}
+
+export async function getD1Database(config, dbId) {
+  var res = await cfApi(
+    "GET",
+    `/accounts/${config.accountId}/d1/database/${dbId}`,
+    null,
+    config.apiToken
+  );
+  return res.result;
+}
+
+export async function queryD1(config, dbId, sql, params) {
+  var body = { sql };
+  if (params) body.params = params;
+  var res = await cfApi(
+    "POST",
+    `/accounts/${config.accountId}/d1/database/${dbId}/query`,
+    body,
+    config.apiToken
+  );
+  return res.result;
+}
+
+export async function exportD1(config, dbId, body) {
+  return cfApi(
+    "POST",
+    `/accounts/${config.accountId}/d1/database/${dbId}/export`,
+    body,
+    config.apiToken
+  );
+}
+
+export async function importD1(config, dbId, body) {
+  return cfApi(
+    "POST",
+    `/accounts/${config.accountId}/d1/database/${dbId}/import`,
+    body,
+    config.apiToken
+  );
 }

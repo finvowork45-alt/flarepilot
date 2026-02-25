@@ -78,9 +78,18 @@ export async function appsInfo(name, options) {
   console.log(
     `${fmt.bold("Domains:")}    ${(appConfig.domains || []).join(", ") || fmt.dim("(none)")}`
   );
+  var envCount = (appConfig.envKeys || []).length;
+  var secretCount = (appConfig.secretKeys || []).length;
+  var totalCount = envCount + secretCount;
+  // Fallback for old-format configs without envKeys
+  if (!appConfig.envKeys && appConfig.env) totalCount = Object.keys(appConfig.env).length;
+  var envDisplay = secretCount > 0 ? `${totalCount} (${secretCount} secret)` : `${totalCount}`;
   console.log(
-    `${fmt.bold("Env vars:")}   ${Object.keys(appConfig.env || {}).length}`
+    `${fmt.bold("Env vars:")}   ${envDisplay}`
   );
+  if (appConfig.dbId) {
+    console.log(`${fmt.bold("Database:")}   ${appConfig.dbName || appConfig.dbId}`);
+  }
   if (appConfig.deployedAt) {
     console.log(`${fmt.bold("Deployed:")}   ${appConfig.deployedAt}`);
   }
@@ -111,6 +120,18 @@ export async function appsDestroy(name, options) {
 
   var config = getConfig();
   var scriptName = `flarepilot-${name}`;
+
+  // Delete D1 database if attached
+  try {
+    var appConfig = await getAppConfig(config, name);
+    if (appConfig && appConfig.dbId) {
+      process.stderr.write(`Deleting D1 database ${appConfig.dbName || appConfig.dbId}...\n`);
+      var { deleteD1Database } = await import("../lib/cf.js");
+      await deleteD1Database(config, appConfig.dbId);
+    }
+  } catch (e) {
+    process.stderr.write(`  ${fmt.dim(`Warning: ${e.message}`)}\n`);
+  }
 
   // Delete container application first (before worker, since it references the DO namespace)
   process.stderr.write(`Deleting container application...\n`);

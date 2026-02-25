@@ -1,6 +1,6 @@
 # flarepilot
 
-Dokku/Heroku/Fly.io-style deployments on Cloudflare Containers.
+Heroku/Fly.io-style deployments on Cloudflare Containers.
 
 <p align="center">
   <img src="demo-app/flarepilot-demo.svg" alt="flarepilot demo" width="720"><br>
@@ -34,6 +34,7 @@ Under the hood, each app is a Cloudflare Worker backed by Durable Objects runnin
 - **Multi-region scaling** - use `locationHints` for basic multi-region deployments.
 - **Easy config updates** - change env vars, scaling, and custom domains without redeploying your image.
 - **Custom domains** - interactive zone picker, automatic DNS record creation, root or subdomain routing.
+- **Database** - attach a D1 (SQLite) database with `--db` or `db create`. Query via CLI, import/export SQL, or connect remotely via the LibSQL protocol.
 - **Zero external dependencies** - no wrangler, no KV, no external databases, only a Cloudflare API token
 
 ## Quick start
@@ -73,6 +74,13 @@ flarepilot scale [name]            Show or adjust scaling
 flarepilot domains add             Add a custom domain (interactive)
 flarepilot domains list [name]     List custom domains
 flarepilot domains remove <domain> Remove a custom domain
+flarepilot db create [name]        Create and attach a D1 database
+flarepilot db info [name]          Show database details + connection string
+flarepilot db query [name] <sql>   Run a single SQL query
+flarepilot db import [name] <path> Import a .sql file
+flarepilot db export [name]        Export database as SQL dump
+flarepilot db token [name]         Show or rotate auth token
+flarepilot db destroy [name]       Destroy the attached database
 flarepilot regions                 List available regions
 flarepilot doctor                  Check system setup
 ```
@@ -91,8 +99,33 @@ flarepilot scale myapp -i 4
 flarepilot scale myapp --instance-type standard
 flarepilot scale myapp --vcpu 1 --memory 512
 ```
-
 Regions are Durable Object `locationHints` - Cloudflare will attempt to place containers near the requested region but exact placement is not guaranteed. Run `flarepilot regions` to see all 9 available regions.
+
+
+## Database
+
+Each app can have a D1 (SQLite) database attached. Create one during deploy or add it later:
+
+```sh
+# Attach during first deploy
+flarepilot deploy myapp . --db
+
+# Or add to an existing app
+flarepilot db create myapp
+
+# Interactive SQL shell
+flarepilot db shell myapp
+
+# Run a query
+flarepilot db query myapp "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)"
+flarepilot db query myapp "SELECT * FROM users"
+
+# Import / export
+flarepilot db import myapp schema.sql
+flarepilot db export myapp -o backup.sql
+```
+
+The database is also accessible remotely via the LibSQL clients. Run `flarepilot db info` to see the connection URL, and `flarepilot db token` to manage the auth token.
 
 ## FAQ
 

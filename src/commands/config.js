@@ -1,7 +1,21 @@
 import { readFileSync } from "fs";
 import { getConfig, getAppConfig, pushAppConfig } from "../lib/cf.js";
-import { status, success, fatal, fmt } from "../lib/output.js";
+import { status, success, fatal, hint, fmt } from "../lib/output.js";
 import { resolveAppName } from "../lib/link.js";
+
+var RESERVED_NAMES = ["FLAREPILOT_APP_CONFIG", "APP_CONTAINER", "DB", "DB_URL", "DB_TOKEN"];
+
+function validateKeyName(key) {
+  if (RESERVED_NAMES.includes(key)) {
+    fatal(`${fmt.key(key)} is a reserved binding name and cannot be used as an env var.`);
+  }
+}
+
+function ensureKeyLists(appConfig) {
+  if (!appConfig.envKeys) appConfig.envKeys = [];
+  if (!appConfig.secretKeys) appConfig.secretKeys = [];
+  if (!appConfig.env) appConfig.env = {};
+}
 
 export async function configShow(name, options) {
   name = resolveAppName(name);
@@ -37,7 +51,7 @@ export async function configShow(name, options) {
   }
 }
 
-export async function configSet(args) {
+export async function configSet(args, options) {
   // Smart detection: if first arg contains '=', all args are vars.
   // Otherwise first arg is the app name.
   var name, vars;
@@ -66,7 +80,10 @@ export async function configSet(args) {
     );
   }
 
-  if (!appConfig.env) appConfig.env = {};
+  ensureKeyLists(appConfig);
+
+  var isSecret = options && options.secret;
+  var newSecrets = {};
 
   for (var v of vars) {
     var eq = v.indexOf("=");
@@ -75,11 +92,25 @@ export async function configSet(args) {
     }
     var key = v.substring(0, eq);
     var value = v.substring(eq + 1);
-    appConfig.env[key] = value;
-    status(`${fmt.key(key)} set`);
+    validateKeyName(key);
+
+    if (isSecret) {
+      // Remove from envKeys if switching from plain to secret
+      appConfig.envKeys = appConfig.envKeys.filter((k) => k !== key);
+      if (!appConfig.secretKeys.includes(key)) appConfig.secretKeys.push(key);
+      newSecrets[key] = value;
+      appConfig.env[key] = "[hidden]";
+      status(`${fmt.key(key)} set ${fmt.dim("(secret)")}`);
+    } else {
+      // Remove from secretKeys if switching from secret to plain
+      appConfig.secretKeys = appConfig.secretKeys.filter((k) => k !== key);
+      if (!appConfig.envKeys.includes(key)) appConfig.envKeys.push(key);
+      appConfig.env[key] = value;
+      status(`${fmt.key(key)} set`);
+    }
   }
 
-  await pushAppConfig(config, name, appConfig);
+  await pushAppConfig(config, name, appConfig, { newSecrets: Object.keys(newSecrets).length > 0 ? newSecrets : undefined });
   success("Config updated (live).");
 }
 
@@ -110,6 +141,12 @@ export async function configGet(args) {
 
   if (!(key in env)) {
     fatal(`Key ${fmt.key(key)} is not set on ${fmt.app(name)}.`);
+  }
+
+  if ((appConfig.secretKeys || []).includes(key)) {
+    console.log("[hidden]");
+    hint("Secret values are write-only", "they cannot be read back after being set.");
+    return;
   }
 
   console.log(env[key]);
@@ -147,13 +184,17 @@ export async function configUnset(args) {
     );
   }
 
-  if (!appConfig.env) appConfig.env = {};
+  ensureKeyLists(appConfig);
 
   for (var key of keys) {
-    if (!(key in appConfig.env)) {
+    var wasEnv = appConfig.envKeys.includes(key);
+    var wasSecret = appConfig.secretKeys.includes(key);
+    if (!wasEnv && !wasSecret) {
       status(`${fmt.key(key)} ${fmt.dim("(not set, skipping)")}`);
       continue;
     }
+    appConfig.envKeys = appConfig.envKeys.filter((k) => k !== key);
+    appConfig.secretKeys = appConfig.secretKeys.filter((k) => k !== key);
     delete appConfig.env[key];
     status(`${fmt.key(key)} removed`);
   }
@@ -174,7 +215,7 @@ export async function configImport(name, options) {
     );
   }
 
-  if (!appConfig.env) appConfig.env = {};
+  ensureKeyLists(appConfig);
 
   var input;
   if (options.file) {
@@ -196,6 +237,8 @@ export async function configImport(name, options) {
     input = Buffer.concat(chunks).toString("utf-8");
   }
 
+  var isSecret = options && options.secret;
+  var newSecrets = {};
   var count = 0;
   for (var line of input.split("\n")) {
     line = line.trim();
@@ -211,8 +254,20 @@ export async function configImport(name, options) {
     ) {
       value = value.slice(1, -1);
     }
-    appConfig.env[key] = value;
-    status(`${fmt.key(key)} set`);
+    validateKeyName(key);
+
+    if (isSecret) {
+      appConfig.envKeys = appConfig.envKeys.filter((k) => k !== key);
+      if (!appConfig.secretKeys.includes(key)) appConfig.secretKeys.push(key);
+      newSecrets[key] = value;
+      appConfig.env[key] = "[hidden]";
+      status(`${fmt.key(key)} set ${fmt.dim("(secret)")}`);
+    } else {
+      appConfig.secretKeys = appConfig.secretKeys.filter((k) => k !== key);
+      if (!appConfig.envKeys.includes(key)) appConfig.envKeys.push(key);
+      appConfig.env[key] = value;
+      status(`${fmt.key(key)} set`);
+    }
     count++;
   }
 
@@ -220,6 +275,6 @@ export async function configImport(name, options) {
     fatal("No variables found in input.", "Use KEY=VALUE format, one per line.");
   }
 
-  await pushAppConfig(config, name, appConfig);
+  await pushAppConfig(config, name, appConfig, { newSecrets: Object.keys(newSecrets).length > 0 ? newSecrets : undefined });
   success(`${count} variable${count !== 1 ? "s" : ""} imported (live).`);
 }

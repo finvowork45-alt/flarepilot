@@ -2,6 +2,7 @@
   "name": "@flarepilot/worker-template",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "description": "Per-app worker template for Flarepilot",
   "dependencies": {
     "@cloudflare/containers": "^0.0.30"
